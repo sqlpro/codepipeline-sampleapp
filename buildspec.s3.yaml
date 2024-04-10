@@ -1,0 +1,35 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      java: corretto17
+  pre_build:
+    commands:
+      - echo Pre-Build Starting on `date`
+      - chmod +x ./gradlew
+      - echo Pre-Build Complete on `date`
+  build:
+    commands:
+      - ./gradlew bootJar # 단순히 jar 파일만 만드는데 목적이 있다. ./gradlew build의 check, assemble, test 등 처리가 없으므로 빌드 속도는 더 빠르다.
+  post_build:
+    commands:
+      - echo -----------------------------------------
+      - echo $(basename ./build/libs/*.jar)
+      - pwd
+      - echo Build Application Finished at `date`
+artifacts:
+  files:
+    - build/libs/*.jar
+    - appspec.yml
+    - script/*.sh
+  discard-paths: yes # 폴더 경로를 버리고 파일명 기준으로만 업로드
+  
+cache:
+  paths:
+    - '/root/.m2/**/*'   # S3 cache에 등록할 파일들
+    - '/root/.gradle/cache/**/*'
+    - '/root/.gradle/wrapper/**/*'
+
+# 참고)
+#https://github.com/wjdrbs96/Today-I-Learn/tree/master/AWS/AWS%EB%A1%9C%20%EC%9E%90%EB%8F%99%ED%99%94%20%ED%8C%8C%EC%9D%B4%ED%94%84%EB%9D%BC%EC%9D%B8%20%EA%B5%AC%EC%B6%95%ED%95%98%EA%B8%B0:

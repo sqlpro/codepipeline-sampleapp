@@ -1,0 +1,36 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo 'Logging in to Amazon ECR ...'
+
+      - REPOSITORY_URI=000000000000000.dkr.ecr.ap-northeast-2.amazonaws.com
+      - APP_NAME=member-app
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=${COMMIT_HASH:=latest}
+
+      - aws --version
+      - aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin $REPOSITORY_URI/$APP_NAME
+  build:
+    commands:
+      - echo 'Build start on `date`'
+      - ./gradlew bootJar
+
+      - echo 'Building the Docker image ...'
+      - docker build -t $REPOSITORY_URI/$APP_NAME:latest .
+      - docker tag $REPOSITORY_URI/$APP_NAME:latest $REPOSITORY_URI/$APP_NAME:$IMAGE_TAG
+      - echo 'Build completed on `date`'
+
+  post_build:
+    commands:
+      - echo 'Pushing the Docker images ..'
+
+      - docker push $REPOSITORY_URI/$APP_NAME:latest
+      - docker push $REPOSITORY_URI/$APP_NAME:$IMAGE_TAG
+
+      - echo 'Writing image definitions file ...'
+      - printf '[{"name”:"member-app","imageUri":"%s"}]' $REPOSITORY_URI/$APP_NAME:$IMAGE_TAG > imagedefinitions.json
+
+artifacts:
+  files: imagedefinitions.json

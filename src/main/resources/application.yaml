@@ -1,0 +1,7 @@
+spring.application.name: member-app
+spring.profiles.action: local
+server.port: 8080
+
+---
+spring.config.activate.on-profile: dev
+server.port: 80
